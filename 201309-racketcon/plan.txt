@@ -1,0 +1,478 @@
+"The Racket Package System, or Planet 5.0 and Beyond!"
+
+A story about a user using each feature
+Where we came from
+Our process for everyone
+What we still need to do (integrated documentation, prop:)
+
+30m
+
+-- A story about packages --
+
+1. Writing a program (.rkt)
+
+   emacs magitek.rkt
+
+2. Distributing the program (.rkt on a site)
+
+   scp magitek.rkt server:public-html/
+
+   please download: http://terra.com/magitek.rkt
+
+3. Expanding program to many files (uploading to site)
+
+   mkdir narshe
+   mv magitek.rkt narshe
+   emacs narshe/lone-wolf.rkt
+   scp -r narshe server:public-html/
+
+   please download: http://terra.com/narshe
+
+3a. Update program and re-email
+
+    emacs narshe/lone-wolf.rkt
+    ... upload ...
+    mailx
+
+3b. Telling people to install as a package versus downloading the zip,
+because raco pkg update does something rather than receiving emails on
+changes [explain why]
+
+   mailx - source: http://terra.com/narse
+
+4. Adding more data (maybe use a .zip)
+
+   dd if=/dev/dsp of=narshe/soundtrack.wav
+   emacs narshe/music.rkt
+   zip -r narshe.zip narshe
+   scp narshe.zip server:public-html/
+
+   mailx - source update: http://terra.com/narshe.zip
+
+4a. Update program and re-email
+
+    emacs narshe/lone-wolf.rkt
+    ... create zip and upload ...
+    mailx
+
+4b. Users complain about downloading the zip just to find out it
+hasn't changed
+
+    Add a checksum
+
+4c. Update program and re-email
+
+    emacs narshe/lone-wolf.rkt
+    ... create zip/checksum and upload ...
+    mailx
+
+5. Keeping track of changes (using a github)
+
+   cd narshe
+   git init
+   git remote add origin git@github.com:terra/narshe.git
+   git add .
+   git commit -m "Tracking changes now"
+   git push
+
+   mailx - source update: git://github.com/terra/narshe
+
+5a. Now changes are propagated automatically, but still need to email
+
+    git push
+    mailx
+
+6. Deploying widely (putting on catalog server)
+
+   fecho 'git://github.com/terra/narshe' |
+      links https://pkg.racket-lang.org/manage/upload   
+
+   mailx - source update: narshe
+   mailx - announcement not necessary (rss)
+
+6a. Now users get the update without any work
+
+    git push
+    ... users view page ...
+
+7. Using locally in a different piece of code
+
+   raco pkg install --link narshe
+   mkdir returners
+   emacs returners/banon.rkt .oO (require narshe/magitek)
+
+8. Deciding to distribute new code (so add a dep)
+
+   ... create github, upload, etc ...
+
+8a. Broken, doesn't what narshe
+
+   echo "#lang info" > returners/info.rkt
+   echo '(define deps (list "narshe"))' >> returners/info.rkt
+
+   git push
+
+9. Discover that narshe can use a cool feature of Racket v6
+
+   emacs narshe/returners.rkt
+   git push
+   
+9a. Oh no, Racket v5.9 users can't use it any more!
+
+    git checkout master^
+    git branch narshe-for-v5.9
+    git checkout master
+    git push
+
+   fecho '5.9 = git://github.com/terra/narshe#narshe-for-v5.9' |
+      links https://pkg.racket-lang.org/narshe/edit/versions
+    
+9b. User - Um, I checked this out on my machine into 'narshe-for-v5.9'
+and when I installed it, it was a reference to
+"narshe-for-v5.9/magitek", which is weird.
+
+   echo "#lang info" > narshe/info.rkt
+   echo '(define collection "narshe")' >> narshe/info.rkt
+   git push
+
+   [leaving out collection is even worse because it might be "internal
+   linky" if you chose a bad name for your first directory, you are
+   now stuck]
+
+10. Adding a new feature to narshe and wanting to use it
+
+    emacs narshe/locke.rkt
+    git push
+    emacs returners/jidoor.rkt --- uses narshe/locke
+    git push
+
+10a. Oh no! When people update returners it breaks because
+narshe/locke isn't there!
+
+    [discussion of backwards compatibility. In one sense this is a
+    violation, but in the past Racket has not considered it to be
+    one.]
+    
+    [discussion of version 1.0 being the signal that you want to be
+    compatible]
+
+    emacs narshe/info.rkt --- add (define version "2.0")
+    git push
+    emacs returners/info.rkt -- change (define deps '(("narshe" #:version "2.0")))
+    git push
+
+10b. How do I get version 0.0 of narshe?
+
+     There's no reason to, but we want to safely allow old versions
+     out there to continue working. (meaning not thinking they are
+     correct)
+
+11. Terra decides to change narshe to not just analyze the music, but
+actually play it
+
+     emacs narshe/music-player.rkt     
+     (match (system-type) ...)
+     emacs narshe/info.rkt
+           (define deps '(("openal" #:platform macosx)
+                          ("directaudio" #:platform windows)
+                          ("libsndfile" #:platform unix)))
+     git push
+
+12. Gee, this library is getting big, maybe I should add some
+documentation?
+
+     emacs narshe/narshe.scrbl
+     emacs narshe/info.rkt
+           (define scribblings '(("narshe.scrbl")))
+     git push
+
+12a. Um, raco setup dies when I install your package because scribble
+isn't there on my EC2 cluster
+
+    emacs narshe/info.rkt
+          (define deps ... "scribble-lib")
+    git push
+
+12b. Um, you haven't really solved my problem because I don't /want/
+to install scribble to run your package
+
+   emacs narshe/info
+         (define build-deps ....)
+   git push
+
+13. Wait, what are you doing that you are using my package but not
+building it?
+
+   git checkout ...
+   [FUTURE: raco pkg export-pkg narshe]
+
+   raco pkg create --binary 
+   [FUTURE: raco pkg export-pkg --binary narshe]
+
+13a. I do the same thing for my students, but I want them to look at
+the beautiful code, but just get it installed quickly before doing
+their homework so I use...
+
+   raco pkg create --built
+
+   [FUTURE: wget http://pkg.racket-lang.org/narshe/built/v6.0]
+
+14. I'd really like to run "raco play soundtrack.wav"
+
+    emacs narshe/raco.rkt
+    emacs narshe/info.rkt
+    git push
+
+14a. User - I installed your package and "raco play ..." doesn't work like
+the documentation says it does
+
+14b. User - If you run "raco setup" then it will work, so you should do
+that
+
+14c. Dev - What's going on? It works on my machine?
+
+14d. RDev - You need to use 'setup-collects
+
+     emacs narshe/info.rkt
+     git push
+
+14e. Works great!
+
+15. User - This music player is really awesome, but why do I also need to get
+magitek and all this weird stuff too?
+
+    Dev - Okay, I'll break it out into a new package, but how do I
+    make sure I don't duplicate code?
+
+    mkdir music-player
+    mkdir music-player/music
+    mv narshe/music-player.rkt music-player/music/player.rkt
+    mkdir music-player/narshe
+    emacs music-player/narshe/music-player.rkt
+    emacs music-player/info.rkt .oO 'multi
+    emacs music-player/info.rkt .oO 'raco-commands [! doesn't work]
+    emacs music-player/narshe/info.rkt .oO 'raco-commands [works]
+    emacs narshe/info.rkt
+    ... git seq & add to catalog ...
+    git push
+
+15a. User - Um, I can't install both music-player and narshe at the
+same time and that means that I can't install narshe at all
+
+     Conflict on narshe/info
+
+     mv music-player/narshe/info.rkt music-player/music/info.rkt
+     git push
+
+15b. User - Um, now when I compile my program that built on
+narshe/music-player, I get an error from raco setup
+
+    emacs narshe/info.rkt .oO 'implies
+    git push
+
+16. User - music-player is really slow and I fixed it by using a
+custom GPU vector representation!
+
+    curl ... | git am
+    .... now we have data/gpu-vector.rkt
+    git push
+
+16a. User - Um, I can't install music-player and gpu-structs, what's
+going on?
+
+    Conflict on data/gpu-vector
+
+    Resolution about what to do by "committee"
+
+    rm data/gpu-vector.rkt
+    .... 
+    emacs music-player/info.rkt
+    git push
+
+    [Is this backwards incompatible? Technically, but we don't care
+    because it was such a small window and we can deal with by
+    updating everything that used it (nothing)]
+
+17. Terra - I just figured out a totally new way to implement my
+Narshe simulation environment.
+
+    emacs narshe/*
+    git push
+
+17a. User - Ah, everything is broken!!!
+
+     RDev - This is really a different package, you should name it
+     something else
+
+   git checkout master^
+   git branch narshe-v1
+   git push
+   fecho source = git://github.com/terra/narshe#narshe-v1' |
+      links https://pkg.racket-lang.org/narshe/edit/versions
+   fecho 'git://github.com/terra/narshe as narshe2' |
+      links https://pkg.racket-lang.org/manage/upload
+
+17b. User - For my Narshian simulation simulation environment, I want
+to simulate all possible Narshe simulations, and now I can't use this
+one because the packages conflict
+
+    [Debate about whether it is coherent to have both versions. Is one
+    purely old and dead or do they serve different purposes?]
+
+    emacs narshe/info.rkt .oO collection = narshe2
+    git push
+
+18. User - I'm building narshe.com and using many other packages too
+and need to send them all over when I set up a new instance
+
+    FUTURE: raco pkg export-installed > narshe.com.pkgs
+    scp narshe.com.pkgs server:
+    FUTURE: raco pkg import-installed < narshe.com.pkgs
+
+18a. User - It takes a long to run import-list on my machine because
+it downloads everything and I'm worried that this package I use that
+distributes with ZIPs will stop working.
+
+    Step 1. The package that deploys with ZIPs is a "bad" package.
+
+    Step 2.
+
+    FUTURE raco pkg export-pkgs narshe.com.zip pkg ...
+    // plug dmg, plus exe, plus --binary/--built
+    scp narshe.com.zip server:
+    FUTURE raco pkg import-pkgs narshe.com.zip
+
+[Thank the actors]
+
+-- The model of the package system --
+
+The goal of the package system is to take the development process that
+we've used in the past twenty years of Racket development and share it
+with the world. In particular, we encourage work to happen in public
+on versioned repositories using a variety of externally linked
+collections and modules without forcing third-parties to use a
+/different/ model with less capabilities.
+
+In particular, Racket does not have a rich version semantics and
+technical framework to deal with incompatibility issues but instead
+uses a social process to smooth out problems and encourage
+contributors to keep a high standard of compatibility. In our past,
+when we have made incompatible changes, we've done things like create
+"2htdp/image" after "htdp/image" AND "mzscheme" to "scheme" to
+"racket", etc.
+
+In general, we've assumed that incompatibility only means "behavior
+not subsumed by the previous documentation" and "removing
+features". Thus, different implementations, new features, new
+behaviors when the old behavior still persists, are not considered
+incompatible in Racket's history.
+
+-- The model of a package --
+
+A package is a set of modules. These modules may span any number of
+collections.
+
+A package may have a monotonically increasing version that indicates
+that new features were added.
+
+A package may depend on other packages including after specific
+versions and only specific platforms. Dependencies are not enforced,
+but are warned during "raco setup"'s run.
+
+-- What is a good package? --
+
+Uses a neutral name
+
+A good package is hosted on a versioned repository in public. This is
+currently Github.
+
+Explicitly specifies a name in the metadata OR uses 'multi.
+
+Is listed on the official catalog.
+
+Does not conflict with any other good package listed in the catalog
+
+-- What is a better package? --
+
+Starts at version 0.0 (not need to specify). Switches to version 1.0
+once the interface is stable. Increases the version number as
+mentioned above.
+-- If the interface stays the same, then the version should not increase,
+but it is simply an "update".
+
+-- If the interface is grown, the version goes up.
+
+-- If the interface is shrunk, it is a new package that is not logically
+related to the other package.
+
+When you use a new Racket version, list the dep in the catalog by
+tagging the version before the new feature use.
+
+Has informative tags
+
+-- What is the best packages? --
+
+Include documentation and tests
+
+Is a 'multi package
+
+Specifies a license and uses a problem tracker
+
+Has a responsive author that ensures compatibility with Racket (and/or
+notifies PLT when we screw up)
+
+-- What are NOT good packages --
+
+There is no reason to have "development" versions of package, because
+you don't expect others to use it if it development and you can use
+internal branches to deal with dealing with head.
+
+Communicate with diff groups... catalog vs github or make your own
+server (easy!)
+
+-- What is the model of a system --
+
+The same system may contain many users of Racket and many
+installations of Racket. Packages may be installed in a way sensitive
+or agnostic to all these:
+
+user-specific, installation-specific --- user when 'installation-name is (version)
+user-agnostic, installation-specific --- installation
+user-specific, installation-agnostic --- user when 'installation-name is user-specific
+user-agnostic, installation-agnostic --- user when 'installation-name is user-shared
+
+-- What are some open problems?
+
+There is still work to be done (future commands, DrDr integration and
+providing of binary packages including online documentation).
+
+There is also work to be done that we don't know how to do. One of the
+most important ones in my mind is documentation.
+
+- There's no way to know which things can occur as structure
+  properties. You could search for "prop:" but that is clearly
+  immoral.
+
+- There's no way to answer the question, what functions work on a
+  single list and provide a general interface? Some from racket/base,
+  some from racket/list, some from unstable/list, some from srfi/1,
+  etc.
+
+- There's no way to extend the Guide and have a package include a
+  Tutorial, Guide, Exegesis, and Reference without duplicating effort
+  and having a very large Table of Contents.
+
+! I think that all these tied together and we can solve them together,
+  but work remains.
+
+As mentioned before, in Racket we don't deal with multiple
+simultaneous versions of Racket and we have a coarse notion of
+incompatibility that is so coarse it is basically never used. This has
+the feature that we are pushed to always being compatible. This is a
+good thing and I think it has been helpful and will be helpful in the
+future. However, I believe it is an open problem to solve this in a
+way that the Core and can follow the same rules as Extern and live
+happily ever after. I believe that the current package system lays the
+foundation for that package system, however.
+
+-- Questions pls
