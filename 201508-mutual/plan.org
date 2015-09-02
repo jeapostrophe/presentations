@@ -1,0 +1,29 @@
+* 2015/08/19
+  What is programming?
+
+  How much do programmers make?
+
+  Who am I and what Racket is?
+  - Show my games
+  - Talk about Naughty Dog
+  - Talk about NBC Universal, telescopes, etc
+
+  Circles of Evaluation
+
+  Numbers vs other data
+
+  DO: Make a bulls-eye. Make a train.
+
+  Functions as expressions w/o copy & paste
+
+  DO: Make a train getting close to a bulls-eye.
+
+  Animation
+
+  DO: Animate it
+
+  If + choices + games
+
+  DO: Jump over the bulls-eye and keep going
+
+  
