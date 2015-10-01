@@ -71,13 +71,13 @@
   (add! (colorize (text "CHECKING MEMORY....." 'modern 30) "white"))
   (add! (colorize (text "" 'modern 30) "white"))
 
-  
   (add!
    (λ ()
+     (define the-start (or start (- (current-inexact-milliseconds) 1000)))
      (define now (current-inexact-milliseconds))
      (define len 10000000)
      (define HALF (/ len 2))
-     (define p (inexact->exact (ceiling (* 1000 (- now start)))))
+     (define p (inexact->exact (ceiling (* 1000 (- now the-start)))))
      (define (fmt n)
        (~a (~r #:base 16 #:min-width 12 #:pad-string "0"
                n) "0000"))
@@ -156,14 +156,14 @@
   (add! (hb-append (text l null 60) (text r null 30))))
 (go! (relative-placer 0.25 0.45 'lc))
 (aka "Ricoh RP2A03" "")
-(commit! #:effect (SRPNT! (apu-demo)))
+(commit! #:effect void #;(SRPNT! (apu-demo)))
 (commit! #:effect kill-SRPNT!)
 
 (go! (relative-placer 0.5 0.55 'rc))
 (add! (text "Level 2" 'modern 80))
 (go! (relative-placer 0.25 0.65 'lc))
 (aka "NES Chamber Orchestra" "")
-(commit! #:effect (SRPNT! (nco-demo)))
+(commit! #:effect void #;(SRPNT! (nco-demo)))
 (commit! #:effect kill-SRPNT!)
 
 (go! (relative-placer 0.5 0.75 'rc))
@@ -174,6 +174,7 @@
 (define bithoven-example0:c 17034937447589238875292491048880986423348676677269874515734788835411208296694341070947965714463046928135370824185326249995122150239327473124672517141053289956448792938868933533218648351214565581695124587274339009253612993279292174177459719)
 (define bithoven-example0:n 276704817745602746248553755653757320)
 (commit! #:effect
+         void #;
          (SRPNT! (use-bithoven
                   #:style
                   (struct-copy style style:classic
@@ -828,6 +829,7 @@
        bass-notes/e)))))
 
 (commit! #:effect
+         void #;
          (SRPNT! (use-bithoven
                   #:style
                   (struct-copy style style:classic
@@ -843,7 +845,7 @@
   (string-split
    (pretty-format
     (bithoven->composition
-     (from-nat (force p:bithoven/e) 
+     (from-nat bithoven/e 
                bithoven-example0:c)))
    #rx"\n"
    #:trim? #f))
@@ -904,7 +906,7 @@
                      [tempo/e (fin/e 160)]))
       (define comp
         (bithoven->composition
-         (from-nat (force p:bithoven/e) 
+         (from-nat bithoven/e 
                    bithoven-example0:c)))
       (define n/e (make-nestration/e #:style the-style comp))
       (from-nat n/e bithoven-example0:n)))
@@ -920,6 +922,7 @@
 
 (commit! #:effect kill-SRPNT!) (restore! bithoven)
 
+#; #; #; #; #;
 (define (bit-example #:style style)
   (define bit-num-0 #f)
   (define bit-out-0
