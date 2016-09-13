@@ -26,6 +26,9 @@
 
 (define-runtime-path assets "assets")
 
+(define (old-synth:frame p1 p2 t1 n1 ld rd)
+  (synth:frame p1 p2 t1 #f n1 #f #f ld rd))
+
 ;; Bithoven is a prolific composer of approximately
 ;; 107936338584579028906476999435802819420152571696145967835629469168
 ;; 256054600102650823583510099033608338153987460306459613902701999676
@@ -156,14 +159,28 @@
   (add! (hb-append (text l null 60) (text r null 30))))
 (go! (relative-placer 0.25 0.45 'lc))
 (aka "Ricoh RP2A03" "")
-(commit! #:effect void #;(SRPNT! (apu-demo)))
+(define (apu-demo)
+  (define f
+    (old-synth:frame (wave:pulse 1 253 7) #f #f #f #f #f))
+  (make-list 60 f))
+(commit! #:effect (SRPNT-raw! (apu-demo)))
 (commit! #:effect kill-SRPNT!)
 
 (go! (relative-placer 0.5 0.55 'rc))
 (add! (text "Level 2" 'modern 80))
 (go! (relative-placer 0.25 0.65 'lc))
 (aka "NES Chamber Orchestra" "")
-(commit! #:effect void #;(SRPNT! (nco-demo)))
+(define (nco-demo)
+  (define how-many (frames-in-note (cons 0.25 60) 0.25))
+  (define (f t)
+    (old-synth:frame (wave:pulse 2 (pulse-tone->period t) 7)
+                 #f #f #f #f #f))
+  (append
+   (make-list how-many (f 'C3))
+   (make-list how-many (f 'D3))
+   (make-list how-many (f 'E3))
+   (make-list how-many (f 'F3))))
+(commit! #:effect (SRPNT-raw! (nco-demo)))
 (commit! #:effect kill-SRPNT!)
 
 (go! (relative-placer 0.5 0.75 'rc))
@@ -171,10 +188,27 @@
 (go! (relative-placer 0.25 0.85 'lc))
 (aka "Bithoven" "")
 (define summary-end (save!))
-(define bithoven-example0:c 17034937447589238875292491048880986423348676677269874515734788835411208296694341070947965714463046928135370824185326249995122150239327473124672517141053289956448792938868933533218648351214565581695124587274339009253612993279292174177459719)
-(define bithoven-example0:n 276704817745602746248553755653757320)
+
+(define bithoven/e
+  (force p:bithoven/e))
+(define bithoven-example0:c
+  (random-index bithoven/e))
+
+(define the-style
+  (struct-copy style style:classic
+               [tempo/e (fin/e 160)]))
+(define bithoven-example0:comp
+  (bithoven->composition
+   (from-nat bithoven/e 
+             bithoven-example0:c)))
+(define n/e
+  (make-nestration/e #:style the-style
+                     bithoven-example0:comp))
+
+(define bithoven-example0:n
+  (random-index n/e))
+
 (commit! #:effect
-         void #;
          (SRPNT! (use-bithoven
                   #:style
                   (struct-copy style style:classic
@@ -190,7 +224,7 @@
   (for ([i (in-range lines)])
     (add! (text (~a #:min-width cols
                     (substring s (* i cols)
-                               (min (string-length s) (* (add1 i) cols))))
+                               (min (sub1 (string-length s)) (* (add1 i) cols))))
                 'modern 60))))
 (para-add! 10 (format "(~a . ~a)" bithoven-example0:c bithoven-example0:n))
 
@@ -258,7 +292,7 @@
     (commit! #:effect (SRPNT-raw!
                        (let ()
                          (define f
-                           (synth:frame (wave:pulse duty 253 7) #f #f #f #f #f))
+                           (old-synth:frame (wave:pulse duty 253 7) #f #f #f #f #f))
                          (make-list 60 f))))
     (commit! #:effect kill-SRPNT!) (restore! pulse-code)
     pulse-points))
@@ -305,7 +339,7 @@
 (commit! #:effect (SRPNT-raw!
                        (let ()
                          (define f
-                           (synth:frame #f #f (wave:triangle #t 126) #f #f #f))
+                           (old-synth:frame #f #f (wave:triangle #t 126) #f #f #f))
                          (make-list 60 f))))
 (commit! #:effect kill-SRPNT!)
 (restore! ricoh)
@@ -359,7 +393,7 @@
     (commit! #:effect (SRPNT-raw!
                        (let ()
                          (define f
-                           (synth:frame #f #f #f (wave:noise short? #xC 7) #f #f))
+                           (old-synth:frame #f #f #f (wave:noise short? #xC 7) #f #f))
                          (make-list 60 f))))
     (commit! #:effect kill-SRPNT!) (restore! noise-code)
     noise-points))
@@ -407,7 +441,7 @@
 (commit! #:effect (SRPNT-raw!
                    (let ()
                      (define f
-                       (synth:frame (wave:pulse 2 253 7) (wave:pulse 0 253 7)
+                       (old-synth:frame (wave:pulse 2 253 7) (wave:pulse 0 253 7)
                                     (wave:triangle #t 126)
                                     (wave:noise #f #xC 7) #f #f))
                      (make-list 60 f))))
@@ -440,16 +474,7 @@
       frames-in-note))))
 
 (commit! #:effect (SRPNT-raw!
-                   (let ()
-                     (define how-many (frames-in-note (cons 0.25 60) 0.25))
-                     (define (f t)
-                       (synth:frame (wave:pulse 2 (pulse-tone->period t) 7)
-                                    #f #f #f #f #f))
-                     (append
-                      (make-list how-many (f 'C3))
-                      (make-list how-many (f 'D3))
-                      (make-list how-many (f 'E3))
-                      (make-list how-many (f 'F3))))))
+                   (nco-demo)))
 (commit! #:effect kill-SRPNT!) (restore! nco)
 
 ;; Then do the same for time-signatures and bars
@@ -471,29 +496,31 @@
     (define-mode mode-dorian 1)
     (define-mode mode-phrygian 2))))
 
-(commit! #:effect (SRPNT-raw!
-                   (let ()
-                     (define how-many (frames-in-note (cons 0.25 60) 0.25))
-                     (define scale (scale-diatonic-major 'C))
-                     (define (->t c base)
-                       (match-define (cons tone octave) c)
-                       (string->symbol
-                        (format "~a~a" tone (+ octave base))))
-                     (define (f i)
-                       (match-define
-                         (list p1 p2 t)
-                         (chord-triad (mode scale i)))
-                       (synth:frame (wave:pulse 2 (pulse-tone->period (->t p1 4))
-                                                (if (odd? i) 8 7))
-                                    (wave:pulse 0 (pulse-tone->period (->t p2 3))
-                                                (if (odd? i) 8 7))
-                                    (wave:triangle #t (triangle-tone->period (->t t 2)))
-                                    #f #f #f))
-                     (append
-                      (make-list how-many (f 0))
-                      (make-list how-many (f 1))
-                      (make-list how-many (f 2))
-                      (make-list how-many (f 3))))))
+(commit!
+ #:effect
+ (SRPNT-raw!
+  (let ()
+    (define how-many (frames-in-note (cons 0.25 60) 0.25))
+    (define scale (scale-diatonic-major 'C))
+    (define (->t c base)
+      (match-define (cons tone octave) c)
+      (string->symbol
+       (format "~a~a" tone (+ octave base))))
+    (define (f i)
+      (match-define
+        (list p1 p2 t)
+        (chord-triad (mode scale i)))
+      (old-synth:frame (wave:pulse 2 (pulse-tone->period (->t p1 4))
+                               (if (odd? i) 8 7))
+                   (wave:pulse 0 (pulse-tone->period (->t p2 3))
+                               (if (odd? i) 8 7))
+                   (wave:triangle #t (triangle-tone->period (->t t 2)))
+                   #f #f #f))
+    (append
+     (make-list how-many (f 0))
+     (make-list how-many (f 1))
+     (make-list how-many (f 2))
+     (make-list how-many (f 3))))))
 (commit! #:effect kill-SRPNT!) (restore! nco)
 
 (commit!)  (restore! nco)
@@ -566,7 +593,7 @@
                        (define how-many (frames-in-note (cons 0.25 60) 0.25))
                        (map
                         (λ (p1)
-                          (synth:frame p1 #f #f #f #f #f))
+                          (old-synth:frame p1 #f #f #f #f #f))
                         (append
                          ((FUN 2) how-many (cons 'C3 #f))
                          ((FUN 2) how-many (cons 'D3 #t))
@@ -634,7 +661,7 @@
                                 4 (spec:linear 4 2)
                                 4 (spec:constant 0))))
       (define i:drums:basic
-        (i:drums (vector i:drum:hihat i:drum:bass i:drum:snare))))))
+        (vector i:drum:hihat i:drum:bass i:drum:snare)))))
   (go! (relative-placer 0.50 0.2 'lt))  
   (add!
    (parameterize ([get-current-code-font-size (λ () 20)])
@@ -656,9 +683,9 @@
               (cons 0.125 2) (cons 0.125 0))))))
   (commit! #:effect (SRPNT!
                      (test-drums 
-                      (i:drums (vector i:drum:hihat
-                                       i:drum:bass
-                                       i:drum:snare)))))
+                      (vector i:drum:hihat
+                              i:drum:bass
+                              i:drum:snare))))
   (commit! #:effect kill-SRPNT!) (restore! nco))
 
 (background! "GreenYellow")
@@ -787,49 +814,54 @@
 (add!
  (parameterize ([get-current-code-font-size (λ () 12)])
    (code
-    (define bithoven/e
-      (vector/e
-       (dep/e
-        #:one-way? #f
-        #:flat? #t
-        #:f-range-finite? #t
-        time-sig/e
-        (λ (ts)
-          (dep/e
-           #:one-way? #f
-           #:flat? #t
-           #:f-range-finite? #t
-           (accent-pattern/e ts)
-           (λ (ap)
-             (dep/e
-              #:one-way? #f
-              #:flat? #t
-              #:f-range-finite? #t
-              (cons/e form/e chord-progression/e)
-              (λ (f*cp)
-                (match-define (cons f cp) f*cp)
-                (define cp-s (progression-seq cp))
-                (define measures-per-part
-                  (*
-                   (let ()
-                     (ceiling
-                      (/ (length cp-s)
-                         (accent-pattern-pulses-per-measure ap))))
-                   (let ()
-                     (define pat-length (length (form-pattern f)))
-                     (cond
-                       [(< pat-length 3) 4]
-                       [(< pat-length 5) 2]
-                       [else 1]))))
-                (define (this-kind-of-part/e len)
-                  (part/e ts ap cp measures-per-part len))
-                (traverse/e
-                 (λ (p) (this-kind-of-part/e (cdr p)))
-                 (form-part-lens f))))))))
-       bass-notes/e)))))
+    (define p:bithoven/e
+      (delay
+        (vector/e
+         (dep/e
+          #:one-way? #f
+          #:flat? #t
+          #:f-range-finite? #t
+          time-sig/e
+          (λ (ts)
+            (dep/e
+             #:one-way? #f
+             #:flat? #t
+             #:f-range-finite? #t
+             (accent-pattern/e ts)
+             (λ (ap)
+               (dep/e
+                #:one-way? #f
+                #:flat? #t
+                #:f-range-finite? #t
+                (cons/e form/e chord-progression/e)
+                (λ (f*cp)
+                  (match-define (cons f cp) f*cp)
+                  (define cp-s (progression-seq cp))
+                  (define measures-per-part
+                    (length cp-s)
+                    #;
+                    (*
+                     ;; Every chord has to get one pulse at least (thus division) and
+                     ;; we need a balance of measures (thus ceiling)
+                     (let ()
+                       (ceiling
+                        (/ (length cp-s)
+                           (accent-pattern-pulses-per-measure ap))))
+                     ;; If a form is long, then don't make each part long
+                     (let ()
+                       (define pat-length (length (form-pattern f)))
+                       (cond
+                         [(< pat-length 3) 4]
+                         [(< pat-length 5) 2]
+                         [else 1]))))
+                  (define/memo (this-kind-of-part/e len)
+                    (part/e ts ap cp measures-per-part len))
+                  (traverse/e
+                   (λ (p) (this-kind-of-part/e (cdr p)))
+                   (form-part-lens f))))))))
+         bass-notes/e))))))
 
 (commit! #:effect
-         void #;
          (SRPNT! (use-bithoven
                   #:style
                   (struct-copy style style:classic
@@ -844,20 +876,18 @@
 (define comp-strs
   (string-split
    (pretty-format
-    (bithoven->composition
-     (from-nat bithoven/e 
-               bithoven-example0:c)))
+    bithoven-example0:comp)
    #rx"\n"
    #:trim? #f))
 
 (go! (relative-placer 0.01 0.1 'lt))
-(for ([i (in-range 0 57)])
+(for ([i (in-range (length comp-strs))])
   (add! (text (list-ref comp-strs i) 'modern 10)))
-(go! (relative-placer 0.3 0.1 'lt))
-(for ([i (in-range 57 114)])
+#;(go! (relative-placer 0.3 0.1 'lt))
+#;(for ([i (in-range 57 114)])
   (add! (text (list-ref comp-strs i) 'modern 10)))
-(go! (relative-placer 0.6 0.1 'lt))
-(for ([i (in-range 114 (length comp-strs))])
+#;(go! (relative-placer 0.6 0.1 'lt))
+#;(for ([i (in-range 114 (length comp-strs))])
   (add! (text (list-ref comp-strs i) 'modern 10)))
 
 (commit!) (restore! bithoven)
@@ -900,24 +930,15 @@
 (define nes-strs
   (string-split
    (pretty-format
-    (let ()
-      (define the-style
-        (struct-copy style style:classic
-                     [tempo/e (fin/e 160)]))
-      (define comp
-        (bithoven->composition
-         (from-nat bithoven/e 
-                   bithoven-example0:c)))
-      (define n/e (make-nestration/e #:style the-style comp))
-      (from-nat n/e bithoven-example0:n)))
+    (from-nat n/e bithoven-example0:n))
    #rx"\n"
    #:trim? #f))
 
 (go! (relative-placer 0.2 0.1 'lt))
-(for ([i (in-range 0 30)])
+(for ([i (in-range (length nes-strs))])
   (add! (text (list-ref nes-strs i) 'modern 15)))
-(go! (relative-placer 0.6 0.1 'lt))
-(for ([i (in-range 30 (length nes-strs))])
+#;(go! (relative-placer 0.6 0.1 'lt))
+#;(for ([i (in-range 30 (length nes-strs))])
   (add! (text (list-ref nes-strs i) 'modern 15)))
 
 (commit! #:effect kill-SRPNT!) (restore! bithoven)
@@ -949,6 +970,7 @@
                            (string->bytes/utf-8
                             (get-text-from-user "GBES" "What song?"))))
                     (printf "the song is ~a\n" the-user-song)
+                    #;
                     ((sound-effect (build-path assets "Astley-long.wav")))))
 (commit! #:effect
          (SRPNT! (use-bithoven
