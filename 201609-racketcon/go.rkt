@@ -21,7 +21,7 @@
   (define c (random-vector-ref CHARS))
   (charterm-display c))
 (define (scaling-slide)
-  (λ (#:slide slide-i #:slides slides)
+  (λ (slide-i)
     (charterm-clear-screen)
     (for* ([x (in-range 1 (add1 slide-w))]
            [y (in-range 1 (add1 slide-h))])
@@ -41,7 +41,7 @@
 
 
 
-(define slides
+(define pre-slides
   (list
    (scaling-slide)
    
@@ -422,14 +422,19 @@ Please help! I'm stuck in Limbo!
 
 ))
 
-(provide slides)
-
 ;;;;;;;;;;;;;;;;;;;
 
 (require "charterm.rkt"
          racket/port
+         racket/list
          racket/pretty
          racket/string)
+
+(define slides
+  (list->vector
+   (filter procedure?
+           (flatten pre-slides))))
+(provide slides)
 
 (define slide-h 24)
 (define slide-w 80)
@@ -441,17 +446,23 @@ Please help! I'm stuck in Limbo!
 (define (subsection! x)
   (set! subsection x))
 
-(define-syntax-rule (slide! e ...)
-  (λ (#:slide slide-i
-      #:slides slides)
+(define-syntax-rule (slide* e ...)
+  (λ (slide-i #:redux? [redux? #f])
     (cursor 1 1)
     e ...
 
-    @bottom{@inverse{@d[" "]@d{@section}@d[" > "]@d{@subsection}@d[" "]@right{@(add1 slide-i) / @slides}}}
-    @cursor[slide-w slide-h]))
+    @(unless redux?
+       @bottom{@inverse{@d[" "]@d{@section}@d[" > "]@d{@subsection}@d[" "]@right{@(add1 slide-i) / @(vector-length slides)}}}
+       @cursor[slide-w slide-h])))
 
+(define-syntax-rule (slide! e ...)
+  (λ (slide-i #:redux? [redux? #f])
+    ((vector-ref slides (sub1 slide-i))
+     (sub1 slide-i)
+     #:redux? #t)
+    ((slide* e ...) slide-i #:redux? redux?)))
 (define-syntax-rule (slide e ...)
-  (slide! (clear!) e ...))
+  (slide* (clear!) e ...))
 
 (define cur-x 1)
 (define cur-y 1)

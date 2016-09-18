@@ -9,17 +9,15 @@
 (define (clamp lo x hi)
   (max lo (min x hi)))
 
-(define (default-slide
-          #:slide [slide-i #f]
-          #:slides [slides #f])
+(define (default-slide slide-i)
   (charterm-clear-screen))
 
 (define (go! file)
   (define (read-slides)
     (with-handlers ([exn:fail?
                      (λ (e)
-                       (list
-                        (λ (#:slide x #:slides y)
+                       (vector
+                        (λ (x)
                           (charterm-clear-screen)
                           (define es
                             (with-output-to-string
@@ -38,10 +36,7 @@
   (define slides (vector default-slide))
   (define (reload!)
     (set! last-i 0)
-    (set! slides
-          (list->vector
-           (filter procedure?
-                   (flatten (read-slides))))))
+    (set! slides (read-slides)))
 
   (define last-i 0)
   (define slide-i 0)
@@ -54,7 +49,7 @@
     (for ([disp-i (in-range slide-i #;last-i
                             (min (add1 slide-i) how-many))])
       (define this-slide (vector-ref slides disp-i))
-      (this-slide #:slide disp-i #:slides how-many)))
+      (this-slide disp-i)))
 
   (define (exit!)
     (exit))
