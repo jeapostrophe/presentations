@@ -452,8 +452,8 @@ Please help! I'm stuck in Limbo!
     e ...
 
     @(unless redux?
-       @bottom{@inverse{@d[" "]@d{@section}@d[" > "]@d{@subsection}@d[" "]@right{@(add1 slide-i) / @(vector-length slides)}}}
-       @cursor[slide-w slide-h])))
+       @bottom{@inverse{@d[" "]@d{@section}@d[" "]@unless[(equal? subsection "")]{@d["> "]@d{@subsection}@d[" "]}@right{@(add1 slide-i) / @(vector-length slides)}}})
+    @cursor[(- slide-w 3) slide-h]))
 
 (define-syntax-rule (slide! e ...)
   (λ (slide-i #:redux? [redux? #f])
@@ -470,6 +470,7 @@ Please help! I'm stuck in Limbo!
   (set! cur-x 1) (set! cur-y 1)
   (charterm-clear-screen))
 (define (cursor x y)
+  #;(define y (+ iy 5))
   (set! cur-x x) (set! cur-y y)
   (charterm-cursor x y))
 (define (mx dx)
