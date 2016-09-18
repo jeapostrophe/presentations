@@ -27,7 +27,7 @@
            [y (in-range 1 (add1 slide-h))])
       (ploop! x y))
     
-    (let loop ()
+    #;(let loop ()
       (define x (add1 (random slide-w)))
       (define y (add1 (random slide-h)))
       (ploop! x y)
@@ -507,3 +507,56 @@ Please help! I'm stuck in Limbo!
 
 (define-syntax-rule (pp x)
   (dp (pretty-format 'x #:mode 'display)))
+
+;;;;
+
+(require (prefix-in ss: slideshow)
+         (prefix-in pict: pict))
+
+(define SCREEN #f)
+(define SCREEN-X 1)
+(define SCREEN-Y 1)
+(define *default 'modern)
+(define SCREEN-STYLE *default)
+(define (->string s)
+  (with-output-to-string (λ () (display s))))
+(define (charterm-display s)
+  (for ([c (in-string (->string s))])
+    (set! SCREEN-X (add1 SCREEN-X))
+    (vector-set! (vector-ref SCREEN SCREEN-Y) SCREEN-X
+                 (pict:text (string c) SCREEN-STYLE))))
+(define (charterm-clear-screen)
+  (set! SCREEN-X 1)
+  (set! SCREEN-Y 1)
+  (set! SCREEN
+        (build-vector (add1 slide-h)
+                      (λ (i)
+                        (make-vector (+ 2 slide-w) (pict:text " " 'modern))))))
+(define (charterm-cursor x y)
+  (set! SCREEN-X x)
+  (set! SCREEN-Y y))
+(define (charterm-inverse)
+  ;; XXX
+  (set! SCREEN-STYLE *default))
+(define (charterm-normal)
+  (set! SCREEN-STYLE *default))
+(define (charterm-bold)
+  ;; XXX
+  (set! SCREEN-STYLE *default))
+
+(define (screen->pict scr)
+  (for/fold ([p (pict:blank)])
+            ([ROW (in-vector SCREEN)])
+    (pict:vc-append
+     p
+     (for/fold ([p (pict:blank)])
+               ([col (in-vector ROW)])
+       (pict:hc-append p col)))))
+
+(for ([s (in-vector slides)]
+      [i (in-naturals)])
+  (s i)
+  (ss:slide
+   (pict:scale-to-fit (screen->pict SCREEN)
+                      ss:client-w
+                      ss:client-h)))
