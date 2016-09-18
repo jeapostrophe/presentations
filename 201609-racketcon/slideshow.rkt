@@ -51,7 +51,8 @@
   (define (prev!) (up! sub1))
   (define (display!)
     (define how-many (vector-length slides))
-    (for ([disp-i (in-range last-i (min (add1 slide-i) how-many))])
+    (for ([disp-i (in-range slide-i #;last-i
+                            (min (add1 slide-i) how-many))])
       (define this-slide (vector-ref slides disp-i))
       (this-slide #:slide disp-i #:slides how-many)))
 

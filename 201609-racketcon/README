@@ -100,7 +100,7 @@ remix does the following:
 - Turn on @-reader always
 - Make [] and {} different from ()s
 - Introduce a dot notation
-
+  
 * @-reader
 
 This is a long time coming and should be totally uncontroversial. It
@@ -182,9 +182,9 @@ programming. We don't specify exactly what it means, but define it as
 a reading notation for some s-expr, just like []s, {}s, and
 @. Specifically:
 
-a.b => (#%dot a b)
-a.b.c => (#%dot (#%dot a b) c)
-a.(b c) => (#%dot a (b c))
+a.b       => (#%dot a b)
+a.b.c     => (#%dot (#%dot a b) c)
+a.(b c)   => (#%dot a (b c))
 a.(b c).d => (#%dot (#%dot a (b c)) d)
 
 You can imagine what we might attach this to in the standard library,
