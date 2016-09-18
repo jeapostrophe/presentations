@@ -1,0 +1,505 @@
+* R-r-r-emix!
+
+* "#lang remix" is my implementation of a dream.
+
+Although I was not involved in Racket when it first started, it has
+been over ten years since I have been committing and longer since I
+have been a user.
+
+The entire time, I have felt like using and being part of Racket was
+like having a dream about what a programming language could be
+like. For me, I didn't know (and am not sure I do know) have all the
+details of what the dream is. But, I would like to start fulfilling
+it.
+
+For comparison, I think that when we use Typed Racket, we are using
+the fulfillment of Matthias' dream that he had after using both Scheme
+and ML and wanting the best of both.
+
+* Racket is evolutionary and "#lang remix" is revolutionary
+
+One of the greatest strengths of Racket has been its evolutionary
+nature. By this, I mean that there are rarely large shake-ups of the
+code that cause a big shift in how we think about programming with it
+and require large adaptations or porting projects. The few shake-ups
+that I can think of were really quite mild and there's residue today
+that provides compatibility with the past:
+
+- The pre-module time when we only had units
+- The various iterations of the class system before its current form.
+- The time before by-default immutability
+- The pre-Scribble time when we wrote in a special LaTeX variant for
+  the manuals
+
+In each of these cases, it was easy to incrementally change, which has
+given Racket a unique blend of stability and research progress at the
+same time.
+
+Nevertheless, through this same period, we have learned a lot about
+what it means to be "Racket".
+
+* "#lang remix" is the more Racket than "#lang racket" and (hopefully)
+  the most Racket
+
+So, my goal with "#lang remix" is to take those ideas and make a
+language that is the "most Racket". In contrast, I believe that "#lang
+racket" is "#lang r5rs, but what if we also had x, y, z".
+
+Now as a caveat, I personally have lots of ideas about wild
+programming language ideas that I think would be great in a version of
+Racket. For example, in my life I feel like I only need three
+languages---Racket, Coq, and C---and I wish that there were only one
+language that I needed. My long long term aspirations are to make that
+dream of a full-spectrum language a reality. "#lang remix" isn't that
+and I don't think it should be a place to put extra dreams. Instead, I
+want to think about it in this way I've constrained: what would
+today's Racket be like if we knew what we know now, then. It's not the
+last language we'll ever make and doesn't need to be.
+
+With that said, here's three kinds of things that "#lang remix" deals
+with:
+- Notation
+- Core Syntax
+- Library Code
+
+I distinguish, by the way, "notation" to mean the way we type things
+in and "syntax" to be the fundamental forms of the language. In most
+languages there's no distinction between these, but I think in Racket
+there is and I don't think we have a good way to talk about
+them. (Saying "reader" is a bit too low-level for my taste.)
+
+* Notation
+
+Scheme has very little notation: there are parentheses, strings, and,
+the quoting forms.
+
+Something I learned from Shriram was the idea that the notation you
+use helps track what is happening in a program and follow it easier.
+
+Racket improves upon Scheme by adding []s. The most beautiful examples
+are lambda optional arguments and cond and match clauses.
+
+In Racket, we have always had {}s, but never quite knew what to do
+with them.
+
+Other examples are the notational weight of #:keywords that help you
+easily parse a program.
+
+Over Scheme, we also learned that special notations are useful for
+domain specific languages, like existing languages (datalog), and
+especially for text. It is simply implausible to imagine writing all
+the beautiful documentation we have without @.
+
+* "#lang remix" goes a little deeper
+
+My goal with remix's notation is to a go a little bit deeper, but stay
+within what we know works well in Racket and not be too novel in the
+implementation or theory.
+
+remix does the following:
+- Turn on @-reader always
+- Make [] and {} different from ()s
+- Introduce a dot notation
+
+* @-reader
+
+This is a long time coming and should be totally uncontroversial. It
+will help encourage embedding text, such as documentation, inside of
+programs. But, this is also a great way to introduce foreign
+syntax. For example:
+
+datalog demo
+
+* [] and {}
+
+The next thing we do is to change the notation so that [] and {} are
+not just synonyms for ()s that we use by tradition in certain
+places. Instead, they will actually be different. Specifically,
+
+[a b c] => (#%brackets a b c)
+{a b c} => (#%braces a b c)
+
+This has two consequences:
+
+1) Syntax can require you to use one kind or the other by looking for
+#%brackets, #%braces, or nothing. This immediately solves a useful
+problem with a cond macro I like.
+
+I am often in this situation:
+
+(cond
+ [(empty? l) (f)]
+ [(<= (first l) x) (g (first l))]
+ [else (h (first l))])
+
+and it bothers me. I want to write something like:
+
+(cond
+ [(empty? l) (f)]
+ (define f (first l))
+ [(<= f x) (g f)]
+ [else (h f)])
+
+but even though it is clear to me what this means, cond doesn't
+distinguish between the ()s and []s. The "#lang remix" could. This
+problem shows up in many contexts where we simultaneously want
+grouping and we want complex expressions, such as ->*, defproc,
+optional lambda arguments, and so on.
+
+2) We can now provide a default meaning of #%brackets and #%braces in
+the standard library. (Or we could leave them un-interpreted, which I
+feel is a lost opportunity.)
+
+#lang remix defines []s to be a `block` form that is like `begin` or
+ `let`
+
+#lang remix defines {}s to be a default infix notation.
+
+* Infix
+
+Lots of people have tried make a good infix notation for Racket and
+Scheme for a very long time.
+
+Why? Math. Plus a technical challenge to get an extensible notation
+like macros provide for a single notation.
+
+In my opinion, they are all failures. Why? Because no one actually
+uses them. Why is that? I think it is because it is (a) annoying to
+remember to `require` them and (b) painful to go into the infix mode
+inside of some block.
+
+{} connotes C-style programming to me, which has infix, so it seems
+like a nice place to hang it.
+
+The infix is very simple: we only support binary and use the notation
+to de-sugar into normal calls. (XXX Maybe talk about custom operators
+and precedence.)
+
+* Dot
+
+Finally, we add a dot notation reminiscent of C and object-oriented
+programming. We don't specify exactly what it means, but define it as
+a reading notation for some s-expr, just like []s, {}s, and
+@. Specifically:
+
+a.b => (#%dot a b)
+a.b.c => (#%dot (#%dot a b) c)
+a.(b c) => (#%dot a (b c))
+a.(b c).d => (#%dot (#%dot a (b c)) d)
+
+You can imagine what we might attach this to in the standard library,
+but for now, I hope you can see that it is a valuable
+notation. Clearly there is something nice about using this notation to
+navigate data structures and call methods or it would not be so
+popular.
+
+I have heard many Racketeers defend
+
+(posn-x (rectangle-upper-left (player-bounding-box p)))
+
+over
+
+p.bb.ul.x
+
+but I find it absurd.
+
+Now, there are some downsides of this though, that are kind of a big
+deal in Racket.
+
+- What about the old infix notation? => dropped
+- What about rest args? => #%rest
+
+These are kind of ugly, but I believe they better reflect "true
+Racket". Rather than a weird backwards compatible infix, we have a
+nice one. Rather than abusing a fluke of the parse implementation
+where an improper list looks similar to (λ args ...) we just make it
+an actual part of the λ syntax. 
+
+- What about ...? => … and dotdotdot and ***
+
+The Unicode version is very beautiful in my opinion.
+
+- What about numbers? => require #i
+
+This kind of stinks, but is a pragmatic choice to enable a simple
+implementation and the ability to have a very free implementation of
+#%dot where (#%dot 3 4) might be meaningful.
+
+* A new set of core syntax
+
+Let's switch gears a bit and talk about the next thing that "remix"
+provides: a set of core syntax forms. (I am not talking about the
+standard library.)
+
+The override principle is: every position should be expandable and
+all macros to should provide a way to cooperate with others (so-called
+"trampolining" macros.)
+
+* def
+
+This is the way to define things:
+
+(def x 5)
+(def (f x) (+ x 5))
+
+However, there is an implicit block on every definition:
+
+(def x
+ (def y 1)
+ (def z 2)
+ (+ y z))
+
+And, it allows a "def transformer" to control how it expands and take
+over what it means:
+
+(def [<def-transformer> . head] . body)
+
+Example <def-transformer>s are: val, stx, mac.
+
+Although these seems trivial because we could just write a different
+macro invocation:
+
+(def-val head . body)
+(def-stx head . body)
+(def-mac head . body)
+
+It is going to be a big deal because <def-transformer> is a generic
+interface and the same syntax can simultaneously be different kinds of
+transformers.
+
+* def*
+
+We bring define* out of racket/package and make it something like let*
+where when you are inside of a block, the def* can "see" its body and,
+perhaps, wrap it in a macro invocation and change its interpretation:
+
+[(def x 1)
+ (def* y 2)
+ (def z x)
+ (+ x y z)]
+  
+This is only valid inside a block (i.e. not at the top-level.)
+
+* require*
+
+We pun on this to create require* which is like require, but wraps the
+body in a macro that comes from the required module:
+
+(require* m)
+body
+...
+
+=>
+
+(require m (rename-in m [#%require*-begin m:#%require*-begin]))
+(m:#%require*-begin body ...)
+
+This allows libraries to implement a kind of whole-program macro for
+their clients in a convenient way.
+
+* #%dot
+
+The default implement of #%dot does the following: it flattens any
+sequence of #%dots:
+
+(#%dot (#%dot a b) c) becomes (#%dot a b c)
+
+Next, the head position is expected to be a dot-transformer syntax
+value that controls the expansion of the tail. For example:
+
+p.x
+
+will be
+
+(#%dot p x)
+
+and p should be a dot-transformer that looks at that syntax and
+expands to
+
+(posn-x p)
+
+This is generally done by making a posn def-transformer so when you
+write
+
+(def [posn p] ....)
+
+It sets up p as an id-macro that expands to its value but also a
+dot-transformer that knows about its fields.
+
+* lambda
+
+Like define, a def abbreviates a call to lambda:
+
+(def (f x) x)
+=>
+(def f (lambda (x) x))
+
+But, the lambda from remix is different. Here's a sketch:
+
+(remix-lambda (arg ...) body)
+=>
+(racket-lambda (temp-arg ...)
+ (def arg temp-arg) ...
+ body)
+
+What is the point of this? We can make the argument position of lambda
+extensible!
+
+(λ ([posn p]) p.x)
+
+works because it is really
+
+(λ (tmp-p) (def [posn p] tmp-p) p.x)
+
+which lets the posn part set up p as a dot transformer for the .x
+syntax. As we saw before.
+
+* Make def/dot-transformers
+
+We expect that there will be a lot of def/dot-transformers that work
+just like this, so there is a simple macro for defining them to work
+like you would expect
+
+XXX show static-interface-member
+
+* More def commentary
+
+I expect that we will use these def-transformers to implement things
+like pattern matching inside of argument lists, as well as make it so
+Typed Racket's types are def-transformers.
+
+* def+
+
+The next big thing started as an answer to Robby's Haskell envy:
+
+It is really beautiful that in Haskell you can write
+
+length empty = 0
+length (cons x xs) = 1 + length xs
+
+And you don't even need to have all of the definitions of the cases
+all in the same place, they can be separated by other expressions and
+all the cases are collected together
+
+This feature is very similar to how module+ works. So, we make
+something similar called def+:
+
+(def+ (length '())
+  0)
+(def+ (length (cons x xs))
+  {1 + (length xs)})
+
+Key to this is that the arguments of a def+ are assumed to be match
+forms and you must break out of that default.
+
+Now, def+ is generalized and expanded with special def+ transformers,
+naturally. Let's look at an example:
+
+(def+ (length '())
+  0)
+(def+ (length (cons x xs))
+  {1 + (length xs)})
+(def+ [contract length] (-> list? nat?))
+(def+ [doc (length l)]
+  @{A most excellent function
+    for discovering the length of lists.})
+(def+ [examples length]
+ {(length '()) ≡ 0}
+ {(length '(a b c)) ≡ 3})
+(def+ [provide length])
+
+An alternative form that is useful is
+
+(def+ length
+ [contract (-> list? nat?)]
+ [case '() 
+       0]
+ [case (cons x xs)
+       {1 + (length xs)}]
+ [doc (l)
+      @{A most excellent function...}]
+ [examples
+  {(length '()) ≡ 0}
+  {(length '(a b c)) ≡ 3}]
+ [provided])
+
+Now, a subtlety about these def+ transformers is that there is a kind
+of dependency between them. For example, doc needs to have the
+contract. We can imagine that the type might be used by body and so
+on. So a def+ transformer has a function that returns (1) a key to
+identify it and (2) a list of keys that it depends on. Then the
+transformers are nested in that order and each gets to influence the
+expansion and then return a value that will available to later stages.
+
+* A few other things...
+
+Now, these are the most important new syntactic forms but to
+summarize: they represent a principle I'm striving for in Remix:
+composable macros where everything is an expandable position. We have
+learned over the history of Racket, that these two
+features---composability and allowing users to have expansion in new
+places---are very valuable for unlocking creativity we might not yet
+realize we need.
+
+So, you can imagine how a similar style is going to work with macros
+like cond, the testing forms, structure definitions, and so.
+
+* A new core library
+
+The final category of things to say about remix is its standard
+library. This is much more a sketch than the previous ideas, because
+this where the most sweat will be poured in implementing things. My
+hope is many common complaints people have can be crowd-sourced and
+addressed here:
+
+- generic interfaces for most things
+- specific interfaces (with def transformers) to name specific
+  instances
+- normalization of naming scheme and argument patterns
+- dropping historical names and keyword-less many-argument functions
+  (see hash functions)
+- and so
+
+* Why not (require remix)?
+
+While it would be possible to implement this project as:
+
+#lang remix-stx racket/base
+(require remix)
+
+It goes against what I consider the mission statement of "#lang
+remix". I don't want to just make a "bunch of cool macros" that seem
+useful but you rarely use (the way I look at lots of the amazing
+things my friends on the mailing list make). I instead want to ask the
+Racket community to think about a new standard, what could be in it,
+and whether we can actually make it a reality.
+
+* "#lang remix" is still a dream, help make it a reality.
+
+It is time to stop dreaming about Racket 2 and make it.
+
+* Now, in my last breath... Racket 3 
+
+I want to mention a few things that I think should be in Racket 3 and
+might be able to be in Racket 2.
+
+- Allow users to specify data structure layout for efficiency and
+  representation control
+
+- Remove top-level expressions and require a main function to make the
+  implicit effects of a require apparent
+
+- Change a variety of Racket-level semantics, such as making eq?
+  meaningless, make some structures default immutable, change some
+  guarantees about order of evaluation for functions like map or fold,
+  and so on.
+
+- Unify match and syntax-parse and create something that is like
+  syntax templates for runtime computations
+
+- Merge modules and units in a way so that modules (&
+  requires/provides) specify an interface and a default implementation
+  so external code can change which module is used. This could
+  facilitate modular programming and removing of contracts across an
+  entire application.
+
