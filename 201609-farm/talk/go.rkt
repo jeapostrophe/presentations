@@ -192,7 +192,7 @@
 
   (progress! 0 1/4 5/5)
 
-  (define last-bithoven-p (blank 25 25))
+  (define last-bithoven-p (blank 25 35))
   (define last-bithoven-canvas% #f)
   (define last-bithoven
     (interactive
