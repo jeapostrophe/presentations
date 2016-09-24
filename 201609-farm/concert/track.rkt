@@ -77,51 +77,97 @@
 
 (define track-list
   (list
-   ;; Dr Mario - XXX
+   ;; Dr Mario - soft introduction
    (vector
     (t 0 30 0)
     (use-bithoven
      #:style
      (struct-copy style style:classic
-                  [scales/e (fin/e scale-harmonic-minor)]
-                  [tempo/e (fin/e 120)])
+                  [scales/e (fin/e scale-diminished)]
+                  [tempo/e (fin/e 140)]
+                  [drums/e (fin/e i:drums:off)])
      #f #f))
-   ;; FFI - XXX
+   
+   ;; FFI - peppy menu
    (vector
     (t 0 30 0)
     (use-bithoven
      #:style
      (struct-copy style style:classic
-                  [scales/e (fin/e scale-harmonic-minor)]
-                  [tempo/e (fin/e 120)])
+                  [scales/e (fin/e scale-major-pentatonic)]
+                  [drum-measure/e
+                   (λ (ts ap)
+                     (fin/e beat:funk-beat))]
+                  [tempo/e (fin/e 180)])
      #f #f))
-   ;; Castlevania - XXX
+
+   ;; Castlevania - action sequence
    (vector
-    (t 1 50 11)
+    (t 1 12 00)
+    (use-bithoven
+     #:style
+     (struct-copy style style:classic
+                  [scales/e (fin/e scale-diatonic-major)]
+                  [drums/e drums/e]
+                  [drum-measure/e
+                   (λ (ts ap)
+                     (fin/e beat:straight-rock beat:duple-triplets
+                            beat:heavy-metal))]
+                  [tempo/e (fin/e 240)])
+     #f #f))
+
+   ;; Castlevania - dark sequence
+   (vector
+    (t 0 36 00)
     (use-bithoven
      #:style
      (struct-copy style style:classic
                   [scales/e (fin/e scale-harmonic-minor)]
-                  [tempo/e (fin/e 120)])
+                  [tempo/e (fin/e 110)]
+                  [drums/e (fin/e i:drums:off)])
      #f #f))
-   ;; Tetris - XXX
+   
+   ;; Tetris - happy sequence
    (vector
     (t 0 30 0)
     (use-bithoven
      #:style
      (struct-copy style style:classic
-                  [scales/e (fin/e scale-harmonic-minor)]
-                  [tempo/e (fin/e 120)])
+                  [scales/e (fin/e scale-whole-tone)]
+                  [drum-measure/e
+                   (λ (ts ap)
+                     (fin/e beat:alternating-on beat:funk-beat))]
+                  [tempo/e (fin/e 260)])
      #f #f))
-   ;; Mega Man 2 - XXX
+   
+   ;; Mega Man 2 - happy
    (vector
-    (t 1 53 45)
+    (t 1 25 0)
     (use-bithoven
      #:style
      (struct-copy style style:classic
-                  [scales/e (fin/e scale-harmonic-minor)]
-                  [tempo/e (fin/e 120)])
-     #f #f))))
+                  [scales/e (fin/e scale-diatonic-major)]
+                  [drums/e drums/e]
+                  [drum-measure/e
+                   (λ (ts ap)
+                     (fin/e beat:straight-rock beat:alternating-on))]
+                  [tempo/e (fin/e 200)])
+     #f #f))
+
+   ;; Mega Man 2 - all drums
+   (vector
+    (t 0 28 45)
+    (use-bithoven
+     #:style
+     (struct-copy style style:classic                  
+                  [scales/e (fin/e scale-blues)]
+                  [tempo/e (fin/e 180)]
+                  [drum-measure/e
+                   (λ (ts ap)
+                     (fin/e beat:heavy-metal))])
+     #f #f))
+   
+   ))
 
 (module+ main
   (require racket/cmdline
